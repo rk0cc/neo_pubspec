@@ -1,0 +1,12 @@
+name: neo_pubspec
+description: Resolve Dart or Flutter project from directory and read pubspec.yaml.
+version: 1.0.0
+environment:
+  sdk: '>=2.14.0 <3.0.0'
+dependencies:
+  path: ^1.8.0
+  json2yaml: ^2.0.0
+  pub_semver: ^2.1.0
+  yaml: ^3.1.0
+dev_dependencies:
+  test: ^1.18.2
