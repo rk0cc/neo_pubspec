@@ -27,6 +27,70 @@ class PackageDependencySet extends SetBase<PackageDependency> {
     }
   }
 
+  static PackageDependencySet fromMap<M>(M map) {
+    try {
+      assert(map is Map<String, dynamic> || map is YamlMap);
+    } on AssertionError {
+      throw TypeError();
+    }
+
+    List<PackageDependency> temp = [];
+
+    (map as Map).forEach((packageName, packageInfo) {
+      if (packageInfo == null || packageInfo is String) {
+        // Oridinary pub.dev package
+        temp.add(
+            HostedPackageDependency(name: packageName, version: packageInfo));
+      } else if (packageInfo is Map) {
+        if (packageInfo["hosted"] != null) {
+          // Third-party hosted
+          assert(packageInfo["git"] == null &&
+              packageInfo["path"] == null &&
+              packageInfo["sdk"] == null);
+          temp.add(ThirdPartyHostedPackageDependency(
+              name: packageName,
+              version: packageInfo["version"],
+              hostedPackageName: packageInfo["hosted"]["name"],
+              hostedUrl: packageInfo["hosted"]["url"]));
+        } else if (packageInfo["git"] != null) {
+          // Git hosted
+          assert(packageInfo["hosted"] == null &&
+              packageInfo["path"] == null &&
+              packageInfo["sdk"] == null);
+          temp.add((packageInfo["git"] is String)
+              ? GitPackageDependency(
+                  name: packageName, gitUrl: packageInfo["git"])
+              : GitPackageDependency(
+                  name: packageName,
+                  gitUrl: packageInfo["git"]["url"],
+                  gitPath: packageInfo["git"]["path"],
+                  gitRef: packageInfo["git"]["ref"]));
+        } else if (packageInfo["path"] != null) {
+          // Local package
+          assert(packageInfo["git"] == null &&
+              packageInfo["hosted"] == null &&
+              packageInfo["sdk"] == null);
+          assert(packageInfo["path"] is String);
+          temp.add(LocalPackageDependency(
+              name: packageName, packagePath: packageInfo["path"]));
+        } else if (packageInfo["sdk"] != null) {
+          // SDK package
+          assert(packageInfo["git"] == null &&
+              packageInfo["path"] == null &&
+              packageInfo["hosted"] == null);
+          assert(packageInfo["sdk"] is String);
+          temp.add((packageInfo["sdk"] == "flutter")
+              ? SDKPackageDependency.flutter(
+                  name: packageName, version: packageInfo["version"])
+              : SDKPackageDependency(
+                  name: packageName, sdk: packageInfo["sdk"]));
+        }
+      }
+    });
+
+    return PackageDependencySet(import: temp);
+  }
+
   /// Add [PackageDependency] into [Set]
   ///
   /// Unlike [contains], [lookup] and [remove], this [value] must be
@@ -194,25 +258,8 @@ class ThirdPartyHostedPackageDependency
 
 /// A package can be found in local computer
 class LocalPackageDependency extends PackageDependency<Map<String, String>> {
-  /// Path to package's directory
-  late Directory _packagePath;
-
-  /// Apply new package path [Directory]
-  ///
-  /// Throws [AssertionError] if the path is not exist.
-  set packagePath(Directory newVal) {
-    assert(newVal.existsSync(), "${newVal.path} is not existed");
-    _packagePath = newVal;
-  }
-
-  /// Same as [packagePath], but apply [newval] as [String]
-  set packagePathString(String newVal) => packagePath = Directory(newVal);
-
-  /// Get package path [Directory] context
-  Directory get packagePath => _packagePath;
-
-  /// Return [packagePath.path]
-  String get packagePathString => packagePath.path;
+  /// Path to package
+  String packagePath;
 
   /// Get package dependency information of [LocalPackageDependency]
   ///
@@ -221,13 +268,11 @@ class LocalPackageDependency extends PackageDependency<Map<String, String>> {
   ///
   /// If decide to apply [String] [packagePath] after constructor,
   /// please use [packagePathString].
-  LocalPackageDependency({required String name, required String packagePath})
-      : super(name) {
-    this.packagePathString = packagePath;
-  }
+  LocalPackageDependency({required String name, required this.packagePath})
+      : super(name);
 
   @override
-  Map<String, String> get pubspecValue => {"path": packagePathString};
+  Map<String, String> get pubspecValue => {"path": packagePath};
 }
 
 /// A package from Git
