@@ -89,7 +89,7 @@ class PackageDependencySet extends SetBase<PackageDependency> {
 ///
 /// It contains package name and other data realted to this [PackageDependency]
 /// according import method
-abstract class PackageDependency {
+abstract class PackageDependency<V> {
   /// Package's name, which is key field in `pubspec.yaml`
   final String name;
 
@@ -107,7 +107,7 @@ abstract class PackageDependency {
   }
 
   /// Value field of the `pubspec.yaml`
-  get pubspecValue;
+  V get pubspecValue;
 
   @override
   int get hashCode => name.hashCode;
@@ -116,37 +116,6 @@ abstract class PackageDependency {
       (compare is PackageDependency) && compare.hashCode == hashCode;
 }
 
-/// A [PackageDependency] that hosting in [pub.dev](https://pub.dev)
-class HostedPackageDependency extends PackageDependency {
-  final String? version;
-  HostedPackageDependency({required String name, required this.version})
-      : assert(validator.hasValidatedVersioning(version ?? "any"),
-            "$version is not valid format for pubspec"),
-        super(name);
-
-  @override
-  get pubspecValue => version;
-}
-
-/// Extended class form [HostedPackageDependency] which published package to
-/// third-party site
-class ThirdPartyHostedPackageDependency extends HostedPackageDependency {
-  final String hostedName;
-  final String hostedUrl;
-  ThirdPartyHostedPackageDependency(
-      {required String name,
-      required String? version,
-      required this.hostedName,
-      required this.hostedUrl})
-      : assert(validator.hasValidateHttpFormat(hostedUrl),
-            "$hostedUrl is not valid hosting URL"),
-        assert(validator.hasValidatedName(hostedName),
-            "$hostedName is not valid hosted name"),
-        super(name: name, version: version);
-
-  @override
-  get pubspecValue => {
-        "hosted": {"name": hostedName, "url": hostedUrl},
-        "version": version
-      };
+mixin VersioningPackageDependency<V> on PackageDependency<V> {
+  late final String? version;
 }
