@@ -141,6 +141,8 @@ class HostedPackageDependency extends PackageDependency<String?>
 }
 
 /// A package dependency which get from third party package hosting site
+///
+/// If the package is hosting in Git, please use [GitPackageDependency]
 class ThirdPartyHostedPackageDependency
     extends PackageDependency<Map<String, dynamic>>
     with VersioningPackageDependency {
@@ -212,7 +214,7 @@ class LocalPackageDependency extends PackageDependency<Map<String, String>> {
   /// Return [packagePath.path]
   String get packagePathString => packagePath.path;
 
-  /// Get package dependency information
+  /// Get package dependency information of [LocalPackageDependency]
   ///
   /// Remind that [packagePath] in constructor is [String] which different type
   /// for same name setter which using [Directory].
@@ -226,4 +228,113 @@ class LocalPackageDependency extends PackageDependency<Map<String, String>> {
 
   @override
   Map<String, String> get pubspecValue => {"path": packagePathString};
+}
+
+/// A package from Git
+///
+/// It refer to getting Dart/Flutter package from Git.
+class GitPackageDependency extends PackageDependency<Map<String, dynamic>> {
+  late String _gitUrl;
+
+  /// URL of the Git
+  ///
+  /// It can be either git, ssh or http URL. Otherwise, throws [AssertionError]
+  set gitUrl(String newVal) {
+    assert(validator.hasValidateGitUri(newVal), "$newVal is not valid Git URL");
+    _gitUrl = newVal;
+  }
+
+  /// Get Git URL
+  String get gitUrl => _gitUrl;
+
+  /// Reference for getting package
+  ///
+  /// It can be either branch name, tag name or commit hashing
+  ///
+  /// Leave `null` if won't apply
+  String? gitRef;
+
+  /// Relative path of package in Git repository
+  ///
+  /// Leave `null` if get package from root
+  String? gitPath;
+
+  /// Assign new package dependency of [GitPackageDependency]
+  GitPackageDependency(
+      {required String name, required String gitUrl, this.gitPath, this.gitRef})
+      : super(name) {
+    this.gitUrl = gitUrl;
+  }
+
+  @override
+  Map<String, dynamic> get pubspecValue {
+    final Map<String, dynamic> map = {
+      "git": (gitRef == null && gitPath == null) ? gitUrl : {"url": gitUrl}
+    };
+    if (gitPath != null) {
+      map["git"]!["path"] = gitPath;
+    }
+    if (gitRef != null) {
+      map["git"]!["ref"] = gitRef;
+    }
+    return map;
+  }
+}
+
+/// A package that come with SDK
+///
+/// For example: Flutter
+class SDKPackageDependency extends PackageDependency<Map<String, dynamic>>
+    with VersioningPackageDependency {
+  final bool _lockModifySDK;
+
+  String _sdk;
+
+  /// Define new [sdk] name
+  ///
+  /// Throws [UnsupportedError] if disallow modification
+  set sdk(String newVal) {
+    if (_lockModifySDK) {
+      throw UnsupportedError("SDK modification is locked");
+    } else {
+      _sdk = newVal;
+    }
+  }
+
+  /// Get [sdk] name
+  String get sdk => _sdk;
+
+  /// Create new information of [SDKPackageDependency]
+  ///
+  /// You can set [disallowModifySDK] to `true` to prevent modify SDK name
+  SDKPackageDependency(
+      {required String name,
+      String? version,
+      required String sdk,
+      bool disallowModifySDK = false})
+      : _sdk = sdk,
+        _lockModifySDK = disallowModifySDK,
+        super(name) {
+    this.version = version;
+  }
+
+  /// Create new information of Flutter [SDKPackageDependency]
+  ///
+  /// Creating via [SDKPackageDependency.flutter] disallow editing SDK
+  /// target and throws [UnsupportedError] instead
+  SDKPackageDependency.flutter({required String name, String? version})
+      : _lockModifySDK = true,
+        _sdk = "flutter",
+        super(name) {
+    this.version = version;
+  }
+
+  @override
+  Map<String, dynamic> get pubspecValue {
+    final Map<String, dynamic> map = {"sdk": sdk};
+    if (version != null) {
+      map["version"] = version;
+    }
+    return map;
+  }
 }
