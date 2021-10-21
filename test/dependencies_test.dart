@@ -17,32 +17,26 @@ void main() {
         "version": "^9.5.2"
       }
     };
-
     PackageDependencySet pkgSet =
         PackageDependencySet.fromMap<Map<String, dynamic>>(dummy);
-
     test("validate package set", () {
       expect(pkgSet.length, equals(dummy.length));
       expect(pkgSet.toMap(), equals(dummy));
     });
-
     test("SDK package info", () {
       expect(pkgSet.lookup("flutter"),
           equals(SDKPackageDependency.flutter(name: "flutter")));
     });
-
     test("Git package", () {
       expect((pkgSet.lookup("foo_git_nd") as GitPackageDependency).gitUrl,
           equals("https://example.com/sample/foo_nd.git"));
       expect((pkgSet.lookup("foo_git") as GitPackageDependency).gitUrl,
           equals("https://example.com/sample/foo.git"));
     });
-
     test("local package", () {
       expect((pkgSet.lookup("local_foo") as LocalPackageDependency).packagePath,
           equals("../foo"));
     });
-
     test("hosted package", () {
       expect(
           pkgSet.where((element) => element is HostedPackageDependency).length,
@@ -57,6 +51,37 @@ void main() {
       expect(
           (pkgSet.lookup("alien") as ThirdPartyHostedPackageDependency).version,
           equals("^9.5.2"));
+    });
+  });
+  group("Invalid import", () {
+    test("disallow more than one import method", () {
+      expect(
+          () => PackageDependencySet.fromMap<Map<String, dynamic>>({
+                "chao_pkg": {
+                  "git": "https://www.example.com/sample/lol.git",
+                  "path": "../lol"
+                }
+              }),
+          throwsA(isA<FormatException>()));
+    });
+    test("use invalid type", () {
+      expect(() => PackageDependencySet.fromMap<Map<int, dynamic>>({1: "Ha"}),
+          throwsA(isA<TypeError>()));
+    });
+    test("no versioning in Git and local package import", () {
+      expect(
+          () => PackageDependencySet.fromMap<Map<String, dynamic>>({
+                "chao_pkg": {
+                  "git": "https://www.example.com/sample/lol.git",
+                  "version": "^6.0.0"
+                }
+              }),
+          throwsA(isA<FormatException>()));
+      expect(
+          () => PackageDependencySet.fromMap<Map<String, dynamic>>({
+                "chao_pkg": {"path": "../lol", "version": "^7.0.1"}
+              }),
+          throwsA(isA<FormatException>()));
     });
   });
 }

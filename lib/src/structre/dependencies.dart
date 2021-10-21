@@ -33,65 +33,69 @@ class PackageDependencySet extends SetBase<PackageDependency> {
   ///
   /// If using native [Map], the [Map]'s key must be [String]
   static PackageDependencySet fromMap<M>(M map) {
-    try {
-      assert(map is Map<String, dynamic> || map is YamlMap);
-    } on AssertionError {
+    List<PackageDependency> temp = [];
+    if (map is Map<String, dynamic> || map is YamlMap) {
+      (map as Map).forEach((packageName, packageInfo) {
+        if (packageInfo == null || packageInfo is String) {
+          // Oridinary pub.dev package
+          temp.add(
+              HostedPackageDependency(name: packageName, version: packageInfo));
+        } else if (packageInfo is Map) {
+          try {
+            if (packageInfo["hosted"] != null) {
+              // Third-party hosted
+              assert(packageInfo["git"] == null &&
+                  packageInfo["path"] == null &&
+                  packageInfo["sdk"] == null);
+              temp.add(ThirdPartyHostedPackageDependency(
+                  name: packageName,
+                  version: packageInfo["version"],
+                  hostedPackageName: packageInfo["hosted"]["name"],
+                  hostedUrl: packageInfo["hosted"]["url"]));
+            } else if (packageInfo["git"] != null) {
+              // Git hosted
+              assert(packageInfo["hosted"] == null &&
+                  packageInfo["path"] == null &&
+                  packageInfo["sdk"] == null);
+              assert(packageInfo["version"] == null);
+              temp.add((packageInfo["git"] is String)
+                  ? GitPackageDependency(
+                      name: packageName, gitUrl: packageInfo["git"])
+                  : GitPackageDependency(
+                      name: packageName,
+                      gitUrl: packageInfo["git"]["url"],
+                      gitPath: packageInfo["git"]["path"],
+                      gitRef: packageInfo["git"]["ref"]));
+            } else if (packageInfo["path"] != null) {
+              // Local package
+              assert(packageInfo["git"] == null &&
+                  packageInfo["hosted"] == null &&
+                  packageInfo["sdk"] == null);
+              assert(packageInfo["path"] is String);
+              assert(packageInfo["version"] == null);
+              temp.add(LocalPackageDependency(
+                  name: packageName, packagePath: packageInfo["path"]));
+            } else if (packageInfo["sdk"] != null) {
+              // SDK package
+              assert(packageInfo["git"] == null &&
+                  packageInfo["path"] == null &&
+                  packageInfo["hosted"] == null);
+              assert(packageInfo["sdk"] is String);
+              temp.add((packageInfo["sdk"] == "flutter")
+                  ? SDKPackageDependency.flutter(
+                      name: packageName, version: packageInfo["version"])
+                  : SDKPackageDependency(
+                      name: packageName, sdk: packageInfo["sdk"]));
+            }
+          } on AssertionError catch (ae) {
+            throw FormatException(
+                "Found invalid package field info", ae.message);
+          }
+        }
+      });
+    } else {
       throw TypeError();
     }
-
-    List<PackageDependency> temp = [];
-
-    (map as Map).forEach((packageName, packageInfo) {
-      if (packageInfo == null || packageInfo is String) {
-        // Oridinary pub.dev package
-        temp.add(
-            HostedPackageDependency(name: packageName, version: packageInfo));
-      } else if (packageInfo is Map) {
-        if (packageInfo["hosted"] != null) {
-          // Third-party hosted
-          assert(packageInfo["git"] == null &&
-              packageInfo["path"] == null &&
-              packageInfo["sdk"] == null);
-          temp.add(ThirdPartyHostedPackageDependency(
-              name: packageName,
-              version: packageInfo["version"],
-              hostedPackageName: packageInfo["hosted"]["name"],
-              hostedUrl: packageInfo["hosted"]["url"]));
-        } else if (packageInfo["git"] != null) {
-          // Git hosted
-          assert(packageInfo["hosted"] == null &&
-              packageInfo["path"] == null &&
-              packageInfo["sdk"] == null);
-          temp.add((packageInfo["git"] is String)
-              ? GitPackageDependency(
-                  name: packageName, gitUrl: packageInfo["git"])
-              : GitPackageDependency(
-                  name: packageName,
-                  gitUrl: packageInfo["git"]["url"],
-                  gitPath: packageInfo["git"]["path"],
-                  gitRef: packageInfo["git"]["ref"]));
-        } else if (packageInfo["path"] != null) {
-          // Local package
-          assert(packageInfo["git"] == null &&
-              packageInfo["hosted"] == null &&
-              packageInfo["sdk"] == null);
-          assert(packageInfo["path"] is String);
-          temp.add(LocalPackageDependency(
-              name: packageName, packagePath: packageInfo["path"]));
-        } else if (packageInfo["sdk"] != null) {
-          // SDK package
-          assert(packageInfo["git"] == null &&
-              packageInfo["path"] == null &&
-              packageInfo["hosted"] == null);
-          assert(packageInfo["sdk"] is String);
-          temp.add((packageInfo["sdk"] == "flutter")
-              ? SDKPackageDependency.flutter(
-                  name: packageName, version: packageInfo["version"])
-              : SDKPackageDependency(
-                  name: packageName, sdk: packageInfo["sdk"]));
-        }
-      }
-    });
 
     return PackageDependencySet(import: temp);
   }
