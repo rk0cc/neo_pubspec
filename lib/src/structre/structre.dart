@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:io';
 
+import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
 import '../validator.dart' as validator;
@@ -23,10 +24,14 @@ void _assignHandler(void Function() assign) {
   }
 }
 
+/// Environment configuration field from `pubspec.yaml`
 class PubspecEnvironment {
   late String _sdk;
   late String? _flutter;
 
+  /// Set Dart SDK version
+  ///
+  /// Please note that you can not assign caret syntax (`^`) in this field
   set sdk(String newVal) => _assignHandler(() {
         assert(
             validator.hasValidatedVersioning(newVal) &&
@@ -35,6 +40,7 @@ class PubspecEnvironment {
         _sdk = newVal;
       });
 
+  /// Set Flutter SDK version
   set flutter(String? newVal) => _assignHandler(() {
         if (newVal != null) {
           assert(validator.hasValidatedVersioning(newVal),
@@ -43,17 +49,21 @@ class PubspecEnvironment {
         _flutter = newVal;
       });
 
+  /// Get Dart SDK version
   String get sdk => _sdk;
 
+  /// Get Flutter SDK version
   String? get flutter => _flutter;
 
+  /// Create new record of [PubspecEnvironment]
   PubspecEnvironment({required String sdk, String? flutter}) {
-    this._sdk = sdk;
-    this._flutter = flutter;
+    this.sdk = sdk;
+    this.flutter = flutter;
   }
 
+  /// Convert it [Map] as value of `pubspec.yaml`
   Map<String, String> get map {
-    Map<String, String> m = {"sdk": sdk};
+    final Map<String, String> m = {"sdk": sdk};
     if (flutter != null) {
       m["flutter"] = flutter!;
     }
@@ -61,6 +71,7 @@ class PubspecEnvironment {
   }
 }
 
+/// Object of `pubspec.yaml` context
 class PubspecInfo {
   void _publishPackageFieldValidator(String? newVal, String fieldName) {
     if (publishTo != "none") {
@@ -68,7 +79,24 @@ class PubspecInfo {
     }
   }
 
+  /// Target site of publishing package
+  ///
+  /// Assign `"none"` if keep this package private
+  ///
+  /// Assign `null` for publishing to [pub.dev](https://pub.dev)
   String? publishTo;
+
+  /// Environemnt field
+  final PubspecEnvironment environment;
+
+  /// Package that will be used in your project
+  final PackageDependencySet dependencies;
+
+  /// Package that will be used in your project for testing
+  final PackageDependencySet devDependencies;
+
+  /// Apply the package that planning to be overrided
+  final OverridePackageDependencySet dependencyOverrides;
 
   late String _name;
 
@@ -79,47 +107,147 @@ class PubspecInfo {
       _issueTracker,
       _documentation;
 
+  /// Package's name
   set name(String newVal) => _assignHandler(() {
         assert(validator.hasValidatedName(newVal),
             "$newVal is not valid package name");
         _name = newVal;
       });
 
-  set description(String? newVal) {
-    _publishPackageFieldValidator(newVal, "Description");
-    assert(validator.hasEnoughLengthDescription(newVal!),
-        "The description length must between 60 to 180 charathers");
-    _description = newVal;
-  }
+  /// Package's description
+  ///
+  /// It is non-null field when [publishTo] is not `"none"`
+  set description(String? newVal) => _assignHandler(() {
+        _publishPackageFieldValidator(newVal, "Description");
+        assert(validator.hasEnoughLengthDescription(newVal!),
+            "The description length must between 60 to 180 charathers");
+        _description = newVal;
+      });
 
-  set version(String? newVal) {
-    _publishPackageFieldValidator(newVal, "Version");
-    assert(validator.hasValidatedVersioning(newVal!, dependency: false),
-        "$newVal is not valid versioning");
-    _version = newVal;
-  }
+  /// Package's version
+  ///
+  /// It is non-null field when [publishTo] is not `"none"`
+  set version(String? newVal) => _assignHandler(() {
+        _publishPackageFieldValidator(newVal, "Version");
+        assert(validator.hasValidatedVersioning(newVal!, dependency: false),
+            "$newVal is not valid versioning");
+        _version = newVal;
+      });
 
+  /// Provide homepage of the package owner
+  set homepage(String? newVal) => _assignHandler(() {
+        if (newVal != null) {
+          assert(validator.hasValidateHttpFormat(newVal),
+              "$newVal is not valid homepage website");
+        }
+        _homepage = newVal;
+      });
+
+  /// Provide a link to package's repository
+  set repository(String? newVal) => _assignHandler(() {
+        if (newVal != null) {
+          assert(validator.hasValidateHttpFormat(newVal),
+              "$newVal is not valid repository website");
+        }
+        _repository = newVal;
+      });
+
+  /// Provide a issue page of this package
+  set issueTracker(String? newVal) => _assignHandler(() {
+        if (newVal != null) {
+          assert(validator.hasValidateHttpFormat(newVal),
+              "$newVal is not valid issue tracker website");
+        }
+        _issueTracker = newVal;
+      });
+
+  /// Provide documentation of this package
+  set documentation(String? newVal) => _assignHandler(() {
+        if (newVal != null) {
+          assert(validator.hasValidateHttpFormat(newVal),
+              "$newVal is not valid documentation website");
+        }
+        _documentation = newVal;
+      });
+
+  /// Get package [name]
   String get name => _name;
 
+  /// Get package [description]
   String? get description => _description;
 
+  /// Get package [version]
   String? get version => _version;
 
-  final PackageDependencySet dependencies;
+  /// Get package [homepage]
+  String? get homepage => _homepage;
 
-  final PackageDependencySet devDependencies;
+  /// Get package [repository] site
+  String? get repository => _repository;
 
-  final PackageDependencySet dependencyOverrides;
+  /// Get package [issueTracker]
+  String? get issueTracker => _issueTracker;
 
+  /// Get package [documentation] site
+  String? get documentation => _documentation;
+
+  /// Create new [PubspecInfo] object
   PubspecInfo(
       {this.publishTo,
       PackageDependencySet? dependencies,
       PackageDependencySet? devDependencies,
-      PackageDependencySet? dependencyOverrides,
-      required String name})
+      OverridePackageDependencySet? dependencyOverrides,
+      required String name,
+      required this.environment})
       : dependencies = dependencies ?? PackageDependencySet(),
         devDependencies = devDependencies ?? PackageDependencySet(),
-        dependencyOverrides = dependencyOverrides ?? PackageDependencySet() {
+        dependencyOverrides =
+            dependencyOverrides ?? OverridePackageDependencySet() {
     this.name = name;
+  }
+}
+
+extension PubspecInfoImportExport on PubspecInfo {
+  static Future<PubspecInfo> loadFromDir(Directory projectDir) async {
+    throw UnimplementedError();
+  }
+
+  /// Get [Map] object of [PubspecInfo]
+  Map<String, dynamic> toMap() {
+    final Map<String, dynamic> pubspecMap = {
+      "name": name,
+      "environment": environment.map
+    };
+    if (description != null) {
+      pubspecMap["description"] = description!;
+    }
+    if (publishTo != null) {
+      pubspecMap["publish_to"] = publishTo!;
+    }
+    if (version != null) {
+      pubspecMap["version"] = version!;
+    }
+    if (homepage != null) {
+      pubspecMap["homepage"] = homepage!;
+    }
+    if (repository != null) {
+      pubspecMap["repository"] = repository!;
+    }
+    if (issueTracker != null) {
+      pubspecMap["issue_tracker"] = issueTracker!;
+    }
+    if (documentation != null) {
+      pubspecMap["documentation"] = documentation!;
+    }
+    if (dependencies.isNotEmpty) {
+      pubspecMap["dependencies"] = dependencies.toMap();
+    }
+    if (devDependencies.isNotEmpty) {
+      pubspecMap["dev_dependencies"] = devDependencies.toMap();
+    }
+    if (dependencyOverrides.isNotEmpty) {
+      pubspecMap["dependency_overrides"] = dependencyOverrides.toMap();
+    }
+    return pubspecMap;
   }
 }

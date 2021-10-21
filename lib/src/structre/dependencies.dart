@@ -158,6 +158,59 @@ class PackageDependencySet extends SetBase<PackageDependency> {
   }
 }
 
+/// An extended class from [PackageDependencySet], but forcing
+/// [VersioningPackageDependency] uses exact version
+class OverridePackageDependencySet extends PackageDependencySet {
+  /// Create new override set
+  OverridePackageDependencySet({Iterable<PackageDependency>? import})
+      : super(import: import);
+
+  void _versionChecker(PackageDependency dependency) {
+    if (dependency is VersioningPackageDependency) {
+      try {
+        Version.parse(dependency.version!);
+      } on FormatException {
+        throw FormatException(
+            "Please provide absolute version of the package which using to be override.",
+            dependency.version);
+      } on NullThrownError {
+        throw FormatException(
+            "Override package must provide proper version, not null");
+      }
+    }
+  }
+
+  /// Add a package that planning to override
+  ///
+  /// Throws [FormatException] if [VersioningPackageDependency] provided
+  /// non-absolute version of the package
+  @override
+  bool add(PackageDependency value) {
+    _versionChecker(value);
+    return super.add(value);
+  }
+
+  /// Convert to map data
+  ///
+  /// And remove all invalid [VersioningPackageDependency] when caught
+  /// [FormatException], and omitted in return value
+  @override
+  Map<String, dynamic> toMap() {
+    final PackageDependencySet invalidPackage = PackageDependencySet();
+    final Map<String, dynamic> map = <String, dynamic>{};
+    _dependencies.forEach((e) {
+      try {
+        _versionChecker(e);
+        map[e.name] = e.pubspecValue;
+      } on FormatException {
+        invalidPackage.add(e);
+      }
+    });
+    removeAll(invalidPackage);
+    return map;
+  }
+}
+
 /// Standarise class for defining package depencies
 ///
 /// It contains package name and other data realted to this [PackageDependency]
@@ -174,9 +227,11 @@ abstract class PackageDependency<V> {
   /// Value field of the `pubspec.yaml`
   V get pubspecValue;
 
+  /// Get [hashCode] from [name]
   @override
   int get hashCode => name.hashCode;
 
+  /// To [compare] is the same package name with this object
   bool operator ==(Object? compare) =>
       (compare is PackageDependency) && compare.hashCode == hashCode;
 }
