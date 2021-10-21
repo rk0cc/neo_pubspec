@@ -12,4 +12,10 @@ abstract class PackageDependency {
 
   /// Value field of the `pubspec.yaml`
   dynamic get pubspecValue;
+
+  @override
+  int get hashCode => name.hashCode;
+
+  bool operator ==(Object? compare) =>
+      (compare is PackageDependency) && compare.hashCode == hashCode;
 }
