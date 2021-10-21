@@ -3,7 +3,43 @@ import 'package:pub_semver/pub_semver.dart';
 final RegExp _httpScheme = RegExp(r"^https?$");
 
 /// Check [name] is meet requirment of pubspec naming
-bool hasValidatedName(String name) => RegExp(r"^[a-z0-9_]$").hasMatch(name);
+bool hasValidatedName(String name) =>
+    RegExp(r"^[a-z0-9_]$").hasMatch(name) &&
+    <String>{
+      "assert",
+      "break",
+      "case",
+      "catch",
+      "class",
+      "const",
+      "continue",
+      "default",
+      "do",
+      "else",
+      "enum",
+      "extends",
+      "false",
+      "final",
+      "finally",
+      "for",
+      "if",
+      "in",
+      "is",
+      "new",
+      "null",
+      "rethrow",
+      "return",
+      "super",
+      "switch",
+      "this",
+      "throw",
+      "true",
+      "try",
+      "var",
+      "void",
+      "while",
+      "with"
+    }.where((reservedkw) => reservedkw == name).isEmpty;
 
 /// Check the [description] is has enough charather
 ///
