@@ -4,7 +4,7 @@ final RegExp _httpScheme = RegExp(r"^https?$");
 
 /// Check [name] is meet requirment of pubspec naming
 bool hasValidatedName(String name) =>
-    RegExp(r"^[a-z0-9_]$").hasMatch(name) &&
+    RegExp(r"^[a-z][a-z0-9_]*$").hasMatch(name) &&
     <String>{
       "assert",
       "break",
