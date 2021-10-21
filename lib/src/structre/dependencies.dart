@@ -27,6 +27,11 @@ class PackageDependencySet extends SetBase<PackageDependency> {
     }
   }
 
+  /// Import pubspec data from [map]
+  ///
+  /// [map] can be either [Map] or [YamlMap]
+  ///
+  /// If using native [Map], the [Map]'s key must be [String]
   static PackageDependencySet fromMap<M>(M map) {
     try {
       assert(map is Map<String, dynamic> || map is YamlMap);
