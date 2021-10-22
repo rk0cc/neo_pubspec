@@ -3,7 +3,7 @@ part of 'structre.dart';
 /// Providing [SetBase] of [PackageDependency]
 ///
 /// It can be import or export [Map] data
-class PackageDependencySet extends SetBase<PackageDependency> {
+abstract class PackageDependencySetFactory extends SetBase<PackageDependency> {
   /// Return [bool] of handling [dependency] with providing [e]
   static bool _iterableCondition(PackageDependency dependency, e) {
     if (e is String) {
@@ -18,10 +18,10 @@ class PackageDependencySet extends SetBase<PackageDependency> {
   final LinkedHashSet<PackageDependency> _dependencies =
       LinkedHashSet(equals: (d1, d2) => d1 == d2, hashCode: (d) => d.hashCode);
 
-  /// Setup [PackageDependencySet]
+  /// Setup [PackageDependencySetFactory]
   ///
   /// It can [import] existed [Iterable] of [PackageDependency]
-  PackageDependencySet({Iterable<PackageDependency>? import}) {
+  PackageDependencySetFactory([Iterable<PackageDependency>? import]) {
     if (import != null) {
       _dependencies.addAll(import);
     }
@@ -29,10 +29,22 @@ class PackageDependencySet extends SetBase<PackageDependency> {
 
   /// Import pubspec data from [map]
   ///
-  /// [map] can be either [Map] or [YamlMap]
+  /// [map]'s type [M] can be either [Map] or [YamlMap]
   ///
   /// If using native [Map], the [Map]'s key must be [String]
-  static PackageDependencySet fromMap<M>(M map) {
+  ///
+  /// Throws [TypeError] if [M] is not a valid type which mentioned before.
+  ///
+  /// The return type [P] can be either [PackageDependencySet] or
+  /// [OverridePackageDependencySet], but you can not assingn
+  /// [PackageDependencySetFactory].
+  ///
+  /// Throws [UnimplementedError] if the new child
+  /// class of [PackageDependencySetFactory] is created but not available to
+  /// generate the object.
+  static P fromMap<P extends PackageDependencySetFactory, M>(M map) {
+    assert(P != PackageDependencySetFactory,
+        "This is an factory class which you can't use");
     List<PackageDependency> temp = [];
     if (map is Map<String, dynamic> || map is YamlMap) {
       (map as Map).forEach((packageName, packageInfo) {
@@ -97,7 +109,14 @@ class PackageDependencySet extends SetBase<PackageDependency> {
       throw TypeError();
     }
 
-    return PackageDependencySet(import: temp);
+    switch (P) {
+      case PackageDependencySet:
+        return PackageDependencySet(import: temp) as P;
+      case OverridePackageDependencySet:
+        return OverridePackageDependencySet(import: temp) as P;
+      default:
+        throw UnimplementedError("Type ${P.toString()} is not ready yet");
+    }
   }
 
   /// Add [PackageDependency] into [Set]
@@ -158,12 +177,19 @@ class PackageDependencySet extends SetBase<PackageDependency> {
   }
 }
 
-/// An extended class from [PackageDependencySet], but forcing
+/// An implemented class of [PackageDependencySetFactory]
+class PackageDependencySet extends PackageDependencySetFactory {
+  PackageDependencySet({Iterable<PackageDependency>? import}) : super(import);
+}
+
+/// An extended class from [PackageDependencySetFactory], but forcing
 /// [VersioningPackageDependency] uses exact version
-class OverridePackageDependencySet extends PackageDependencySet {
+class OverridePackageDependencySet extends PackageDependencySetFactory {
   /// Create new override set
   OverridePackageDependencySet({Iterable<PackageDependency>? import})
-      : super(import: import);
+      : super(import) {
+    trim();
+  }
 
   void _versionChecker(PackageDependency dependency) {
     if (dependency is VersioningPackageDependency) {
@@ -180,6 +206,17 @@ class OverridePackageDependencySet extends PackageDependencySet {
     }
   }
 
+  /// Remove all [VersioningPackageDependency] which will caught
+  /// [FormatException]
+  void trim() => _dependencies.removeWhere((element) {
+        try {
+          _versionChecker(element);
+          return false;
+        } on FormatException {
+          return true;
+        }
+      });
+
   /// Add a package that planning to override
   ///
   /// Throws [FormatException] if [VersioningPackageDependency] provided
@@ -193,21 +230,11 @@ class OverridePackageDependencySet extends PackageDependencySet {
   /// Convert to map data
   ///
   /// And remove all invalid [VersioningPackageDependency] when caught
-  /// [FormatException], and omitted in return value
+  /// [FormatException] by calling [trim]
   @override
   Map<String, dynamic> toMap() {
-    final PackageDependencySet invalidPackage = PackageDependencySet();
-    final Map<String, dynamic> map = <String, dynamic>{};
-    _dependencies.forEach((e) {
-      try {
-        _versionChecker(e);
-        map[e.name] = e.pubspecValue;
-      } on FormatException {
-        invalidPackage.add(e);
-      }
-    });
-    removeAll(invalidPackage);
-    return map;
+    trim();
+    return super.toMap();
   }
 }
 
@@ -326,12 +353,6 @@ class LocalPackageDependency extends PackageDependency<Map<String, String>> {
   String packagePath;
 
   /// Get package dependency information of [LocalPackageDependency]
-  ///
-  /// Remind that [packagePath] in constructor is [String] which different type
-  /// for same name setter which using [Directory].
-  ///
-  /// If decide to apply [String] [packagePath] after constructor,
-  /// please use [packagePathString].
   LocalPackageDependency({required String name, required this.packagePath})
       : super(name);
 

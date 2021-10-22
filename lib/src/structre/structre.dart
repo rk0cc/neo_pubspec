@@ -72,12 +72,19 @@ class PubspecEnvironment {
 }
 
 /// Object of `pubspec.yaml` context
+///
+/// Only shared field will be included this object, any unique field
+/// like `flutter` or `executables` will be stored as private property
+/// until export
 class PubspecInfo {
   void _publishPackageFieldValidator(String? newVal, String fieldName) {
     if (publishTo != "none") {
       assert(newVal != null, "$fieldName is required when publishing package");
     }
   }
+
+  /// Storing additinal field in this field until convert back to map
+  final Map<String, dynamic> _additionalProperties = {};
 
   /// Target site of publishing package
   ///
@@ -213,6 +220,8 @@ extension PubspecInfoImportExport on PubspecInfo {
   }
 
   /// Get [Map] object of [PubspecInfo]
+  ///
+  /// And append additional information if applied
   Map<String, dynamic> toMap() {
     final Map<String, dynamic> pubspecMap = {
       "name": name,
@@ -248,6 +257,6 @@ extension PubspecInfoImportExport on PubspecInfo {
     if (dependencyOverrides.isNotEmpty) {
       pubspecMap["dependency_overrides"] = dependencyOverrides.toMap();
     }
-    return pubspecMap;
+    return pubspecMap..addAll(_additionalProperties);
   }
 }
