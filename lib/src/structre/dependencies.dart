@@ -42,7 +42,7 @@ abstract class PackageDependencySetFactory extends SetBase<PackageDependency> {
   /// Throws [UnimplementedError] if the new child
   /// class of [PackageDependencySetFactory] is created but not available to
   /// generate the object.
-  static P fromMap<P extends PackageDependencySetFactory, M>(M map) {
+  static P fromMap<P extends PackageDependencySetFactory, M>(M? map) {
     assert(P != PackageDependencySetFactory,
         "This is an factory class which you can't use");
     List<PackageDependency> temp = [];
@@ -105,7 +105,7 @@ abstract class PackageDependencySetFactory extends SetBase<PackageDependency> {
           }
         }
       });
-    } else {
+    } else if (map != null) {
       throw TypeError();
     }
 

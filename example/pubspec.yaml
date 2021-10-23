@@ -1,0 +1,7 @@
+name: neo_pubspec_example
+environment:
+  sdk: ">=2.14.0 <3.0.0"
+publish_to: none
+dependencies:
+  neo_pubspec:
+    path: ../

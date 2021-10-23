@@ -10,7 +10,6 @@ dependencies:
   json2yaml: ^2.0.0
   pub_semver: ^2.1.0
   yaml: ^3.1.0
-  pub_api_client: ^2.1.1
 dev_dependencies:
   test: ^1.18.2
   random_string: ^2.3.1

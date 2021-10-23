@@ -1,5 +1,4 @@
 import 'dart:collection';
-import 'dart:io';
 
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
@@ -71,6 +70,60 @@ class PubspecEnvironment {
   }
 }
 
+/// A [Map] data that is not defined in [PubspecInfo]
+///
+/// It may be `executables` or `flutter` that on-demand field
+class AdditionalProperty extends MapBase<String, dynamic> {
+  final Map<String, dynamic> _map = {};
+
+  static const Set<String> pubspecField = const {
+    "name",
+    "environment",
+    "description",
+    "publish_to",
+    "homepage",
+    "repository",
+    "issue_tracker",
+    "version",
+    "documentation",
+    "dependencies",
+    "dev_dependencies",
+    "dependency_overrides"
+  };
+
+  static void _fieldKeyCheck(String afk) {
+    var dfiaf = pubspecField.where((element) => element == afk);
+    if (dfiaf.isNotEmpty || !RegExp(r"^[a-z_]+$").hasMatch(afk)) {
+      throw FormatException("Field $afk can not apply here");
+    }
+  }
+
+  AdditionalProperty({Map<dynamic, dynamic>? data}) {
+    if (data != null) {
+      data.forEach((key, _) => _fieldKeyCheck(key));
+      _map.addAll(Map.from(data));
+    }
+  }
+
+  @override
+  operator [](Object? key) => _map[key];
+
+  @override
+  void operator []=(String key, value) {
+    _fieldKeyCheck(key);
+    _map[key] = value;
+  }
+
+  @override
+  void clear() => _map.clear();
+
+  @override
+  Iterable<String> get keys => _map.keys;
+
+  @override
+  remove(Object? key) => _map.remove(key);
+}
+
 /// Object of `pubspec.yaml` context
 ///
 /// Only shared field will be included this object, any unique field
@@ -84,7 +137,7 @@ class PubspecInfo {
   }
 
   /// Storing additinal field in this field until convert back to map
-  final Map<String, dynamic> _additionalProperties = {};
+  final AdditionalProperty additionalProperties;
 
   /// Target site of publishing package
   ///
@@ -204,59 +257,34 @@ class PubspecInfo {
       PackageDependencySet? dependencies,
       PackageDependencySet? devDependencies,
       OverridePackageDependencySet? dependencyOverrides,
+      AdditionalProperty? additionalProperties,
       required String name,
-      required this.environment})
+      required this.environment,
+      String? description,
+      String? version,
+      String? homepage,
+      String? repository,
+      String? issueTracker,
+      String? documentation})
       : dependencies = dependencies ?? PackageDependencySet(),
         devDependencies = devDependencies ?? PackageDependencySet(),
         dependencyOverrides =
-            dependencyOverrides ?? OverridePackageDependencySet() {
+            dependencyOverrides ?? OverridePackageDependencySet(),
+        additionalProperties = additionalProperties ?? AdditionalProperty() {
     this.name = name;
+    this.description = description;
+    this.version = version;
+    this.homepage = homepage;
+    this.repository = repository;
+    this.issueTracker = issueTracker;
+    this.documentation = documentation;
   }
 }
 
-extension PubspecInfoImportExport on PubspecInfo {
-  static Future<PubspecInfo> loadFromDir(Directory projectDir) async {
-    throw UnimplementedError();
-  }
-
-  /// Get [Map] object of [PubspecInfo]
-  ///
-  /// And append additional information if applied
-  Map<String, dynamic> toMap() {
-    final Map<String, dynamic> pubspecMap = {
-      "name": name,
-      "environment": environment.map
-    };
-    if (description != null) {
-      pubspecMap["description"] = description!;
-    }
-    if (publishTo != null) {
-      pubspecMap["publish_to"] = publishTo!;
-    }
-    if (version != null) {
-      pubspecMap["version"] = version!;
-    }
-    if (homepage != null) {
-      pubspecMap["homepage"] = homepage!;
-    }
-    if (repository != null) {
-      pubspecMap["repository"] = repository!;
-    }
-    if (issueTracker != null) {
-      pubspecMap["issue_tracker"] = issueTracker!;
-    }
-    if (documentation != null) {
-      pubspecMap["documentation"] = documentation!;
-    }
-    if (dependencies.isNotEmpty) {
-      pubspecMap["dependencies"] = dependencies.toMap();
-    }
-    if (devDependencies.isNotEmpty) {
-      pubspecMap["dev_dependencies"] = devDependencies.toMap();
-    }
-    if (dependencyOverrides.isNotEmpty) {
-      pubspecMap["dependency_overrides"] = dependencyOverrides.toMap();
-    }
-    return pubspecMap..addAll(_additionalProperties);
-  }
+/// Condition of checking is a flutter project
+extension FlutterPubspecCondition on PubspecInfo {
+  /// Determine is a flutter project by inspecting dependencies in
+  /// [PubspecInfo]
+  bool get isFlutter =>
+      dependencies.contains(SDKPackageDependency.flutter(name: "flutter"));
 }
