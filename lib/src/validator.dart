@@ -76,9 +76,10 @@ bool hasValidateHttpFormat(String site) {
 bool hasValidateGitUri(String site) {
   try {
     Uri uri = Uri.parse(site);
-    return _httpScheme.hasMatch(uri.scheme) &&
+    return (_httpScheme.hasMatch(uri.scheme) ||
+            RegExp(r"^git$").hasMatch(uri.scheme)) &&
         RegExp(r".git$").hasMatch(uri.path);
   } on FormatException {
-    return RegExp(r"^(git|ssh)@\w+\.\w+:.+\.git$", dotAll: true).hasMatch(site);
+    return false;
   }
 }

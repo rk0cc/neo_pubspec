@@ -5,7 +5,8 @@ import 'package:test/test.dart';
 void main() {
   group("Validation test", () {
     test("git site", () {
-      expect(hasValidateGitUri("git@example.com:foo/bar.git"), equals(true));
+      expect(hasValidateGitUri("git@example.com:foo/bar.git"), equals(false));
+      expect(hasValidateGitUri("git://example.com/foo/bar.git"), equals(true));
       expect(hasValidateGitUri("https://www.example.com/foo/bar.git"),
           equals(true));
       expect(hasValidateGitUri("ftp://ftp.example.com/foo/bar.git"),
