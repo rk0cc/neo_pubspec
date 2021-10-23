@@ -76,6 +76,8 @@ class PubspecEnvironment {
 class AdditionalProperty extends MapBase<String, dynamic> {
   final Map<String, dynamic> _map = {};
 
+  /// The [Set] that you can not assign in [AdditionalProperty] since they
+  /// provided in [PubspecInfo]
   static const Set<String> pubspecField = const {
     "name",
     "environment",
