@@ -1,3 +1,8 @@
+## 1.0.2
+
+* Drop Git SSH URL support
+* Add `git://` scheme support
+
 ## 1.0.1
 
 * Prevent IOS and Android program to use package
