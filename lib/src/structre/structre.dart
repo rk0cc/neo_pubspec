@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:io';
 
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';

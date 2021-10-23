@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:json2yaml/json2yaml.dart';
@@ -68,7 +67,10 @@ class PubspecProjectManager {
   bool _flutterMode;
   late File _pubspec;
 
-  PubspecProjectManager._(Directory projectDir) : _flutterMode = false {
+  PubspecProjectManager._(Directory projectDir)
+      : _flutterMode = false,
+        assert(!(Platform.isAndroid || Platform.isIOS),
+            "YOU CAN NOT DEPLOY THIS IN MOBILE PLATFORM") {
     File pubspec = File(p.join(projectDir.path, "pubspec.yaml"));
     assert(pubspec.existsSync(),
         "Can not found pubspec.yaml in ${projectDir.path}");
@@ -78,6 +80,8 @@ class PubspecProjectManager {
   /// Create new [PubspecProjectManager] from project [Directory]
   ///
   /// When it called, it also save [lastCreated] if necessary.
+  ///
+  /// This manager can not run on mobile platform
   factory PubspecProjectManager(Directory projectDir) {
     PubspecProjectManager ppm = PubspecProjectManager._(projectDir);
     _lastCreated = ppm;
