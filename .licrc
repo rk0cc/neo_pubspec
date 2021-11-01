@@ -1,0 +1,5 @@
+[licenses]
+unaccepted = ["AGPL"]
+
+[behavior]
+do_not_block_pr = true
