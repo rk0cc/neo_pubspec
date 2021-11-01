@@ -1,3 +1,8 @@
+## 1.0.2+1
+
+* Cancel iOS and Android forbidden usage
+* Still warn user that it is not designed to run on these platform
+
 ## 1.0.2
 
 * Drop Git SSH URL support

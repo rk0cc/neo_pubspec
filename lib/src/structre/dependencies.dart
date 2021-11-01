@@ -21,9 +21,7 @@ abstract class PackageDependencySetFactory extends SetBase<PackageDependency> {
   /// Setup [PackageDependencySetFactory]
   ///
   /// It can [import] existed [Iterable] of [PackageDependency]
-  PackageDependencySetFactory([Iterable<PackageDependency>? import])
-      : assert(!(Platform.isAndroid || Platform.isIOS),
-            "YOU CAN NOT RUN IN MOBILE PLATFORM") {
+  PackageDependencySetFactory([Iterable<PackageDependency>? import]) {
     if (import != null) {
       _dependencies.addAll(import);
     }

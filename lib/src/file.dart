@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:ansicolor/ansicolor.dart';
 import 'package:json2yaml/json2yaml.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
@@ -67,10 +68,11 @@ class PubspecProjectManager {
   bool _flutterMode;
   late File _pubspec;
 
-  PubspecProjectManager._(Directory projectDir)
-      : _flutterMode = false,
-        assert(!(Platform.isAndroid || Platform.isIOS),
-            "YOU CAN NOT DEPLOY THIS IN MOBILE PLATFORM") {
+  PubspecProjectManager._(Directory projectDir) : _flutterMode = false {
+    if (Platform.isAndroid || Platform.isIOS) {
+      AnsiPen pen = AnsiPen()..yellow();
+      print(pen("This is not designed for Android or iOS"));
+    }
     File pubspec = File(p.join(projectDir.path, "pubspec.yaml"));
     assert(pubspec.existsSync(),
         "Can not found pubspec.yaml in ${projectDir.path}");
