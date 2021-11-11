@@ -1,3 +1,9 @@
+## 1.0.3
+
+* Add pubspec format tester via inspecting directory
+* Update `json2yaml` to `3.0.0`
+* Update `test` to `1.19.3`
+
 ## 1.0.2+1
 
 * Cancel iOS and Android forbidden usage

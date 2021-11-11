@@ -256,4 +256,21 @@ extension PubspecInfoImportExport on PubspecInfo {
           data: Map.from(map)
             ..removeWhere((key, value) =>
                 AdditionalProperty.pubspecField.contains(key))));
+
+  /// Allowing to validate pubspec format from [projectDir]
+  static Future<bool> hasValidPubspecInDirectory(Directory projectDir) async {
+    if (await projectDir.exists() && projectDir.isAbsolute) {
+      File pubspec = File(p.join(projectDir.path, "pubspec.yaml"));
+      if (await pubspec.exists()) {
+        var yaml = loadYaml(await pubspec.readAsString());
+        try {
+          parseFromMap<YamlMap>(yaml);
+          return true;
+        } on AssertionError {
+          return false;
+        }
+      }
+    }
+    return false;
+  }
 }

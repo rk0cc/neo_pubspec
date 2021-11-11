@@ -2,15 +2,15 @@ name: neo_pubspec
 description: Resolve Dart or Flutter project from directory and read pubspec.yaml.
 homepage: https://www.rk0cc.xyz
 repository: https://github.com/rk0cc/neo_pubspec
-version: 1.0.2+1
+version: 1.0.3
 environment:
   sdk: '>=2.14.0 <3.0.0'
 dependencies:
   path: ^1.8.0
-  json2yaml: ^2.0.0
+  json2yaml: ^3.0.0
   pub_semver: ^2.1.0
   yaml: ^3.1.0
   ansicolor: ^2.0.1
 dev_dependencies:
-  test: ^1.18.2
+  test: ^1.19.3
   random_string: ^2.3.1
