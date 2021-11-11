@@ -181,7 +181,9 @@ class PubspecInfo {
   /// It is non-null field when [publishTo] is not `"none"`
   set description(String? newVal) => _assignHandler(() {
         _publishPackageFieldValidator(newVal, "Description");
-        assert(validator.hasEnoughLengthDescription(newVal!),
+        assert(
+            validator.hasEnoughLengthDescription(newVal ?? "",
+                privatePackage: publishTo == "none"),
             "The description length must between 60 to 180 charathers");
         _description = newVal;
       });
@@ -191,8 +193,10 @@ class PubspecInfo {
   /// It is non-null field when [publishTo] is not `"none"`
   set version(String? newVal) => _assignHandler(() {
         _publishPackageFieldValidator(newVal, "Version");
-        assert(validator.hasValidatedVersioning(newVal!, dependency: false),
-            "$newVal is not valid versioning");
+        if (publishTo != "none") {
+          assert(validator.hasValidatedVersioning(newVal!, dependency: false),
+              "$newVal is not valid versioning");
+        }
         _version = newVal;
       });
 

@@ -1,3 +1,7 @@
+## 1.0.3+1
+
+* Fix issue when throwing error of no description and version on private package
+
 ## 1.0.3
 
 * Add pubspec format tester via inspecting directory
