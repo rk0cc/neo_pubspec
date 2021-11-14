@@ -3,7 +3,8 @@ part of 'structre.dart';
 /// Providing [SetBase] of [PackageDependency]
 ///
 /// It can be import or export [Map] data
-abstract class PackageDependencySetFactory extends SetBase<PackageDependency> {
+abstract class PackageDependencySetFactory extends SetBase<PackageDependency>
+    with Clonable {
   /// Return [bool] of handling [dependency] with providing [e]
   static bool _iterableCondition(PackageDependency dependency, e) {
     if (e is String) {
@@ -26,6 +27,10 @@ abstract class PackageDependencySetFactory extends SetBase<PackageDependency> {
       _dependencies.addAll(import);
     }
   }
+
+  /// Reconstruct [PackageDependencySetFactory]'s data that any modified
+  /// [PackageDependency] will not affected between [clone]
+  PackageDependencySetFactory get clone;
 
   /// Import pubspec data from [map]
   ///
@@ -180,6 +185,10 @@ abstract class PackageDependencySetFactory extends SetBase<PackageDependency> {
 /// An implemented class of [PackageDependencySetFactory]
 class PackageDependencySet extends PackageDependencySetFactory {
   PackageDependencySet({Iterable<PackageDependency>? import}) : super(import);
+
+  @override
+  PackageDependencySet get clone =>
+      PackageDependencySet(import: this._dependencies);
 }
 
 /// An extended class from [PackageDependencySetFactory], but forcing
@@ -236,6 +245,10 @@ class OverridePackageDependencySet extends PackageDependencySetFactory {
     trim();
     return super.toMap();
   }
+
+  @override
+  OverridePackageDependencySet get clone =>
+      OverridePackageDependencySet(import: this._dependencies);
 }
 
 /// Standarise class for defining package depencies

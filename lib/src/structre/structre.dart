@@ -1,8 +1,10 @@
 import 'dart:collection';
 
+import 'package:neo_pubspec/neo_pubspec.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
+import '../clonable.dart';
 import '../validator.dart' as validator;
 
 part 'dependencies.dart';
@@ -24,7 +26,7 @@ void _assignHandler(void Function() assign) {
 }
 
 /// Environment configuration field from `pubspec.yaml`
-class PubspecEnvironment {
+class PubspecEnvironment with Clonable {
   late String _sdk;
   late String? _flutter;
 
@@ -68,12 +70,16 @@ class PubspecEnvironment {
     }
     return m;
   }
+
+  @override
+  PubspecEnvironment get clone =>
+      PubspecEnvironment(sdk: this._sdk, flutter: this._flutter);
 }
 
 /// A [Map] data that is not defined in [PubspecInfo]
 ///
 /// It may be `executables` or `flutter` that on-demand field
-class AdditionalProperty extends MapBase<String, dynamic> {
+class AdditionalProperty extends MapBase<String, dynamic> with Clonable {
   final Map<String, dynamic> _map = {};
 
   /// The [Set] that you can not assign in [AdditionalProperty] since they
@@ -124,6 +130,9 @@ class AdditionalProperty extends MapBase<String, dynamic> {
 
   @override
   remove(Object? key) => _map.remove(key);
+
+  @override
+  AdditionalProperty get clone => AdditionalProperty(data: this._map);
 }
 
 /// Object of `pubspec.yaml` context
@@ -131,7 +140,7 @@ class AdditionalProperty extends MapBase<String, dynamic> {
 /// Only shared field will be included this object, any unique field
 /// like `flutter` or `executables` will be stored as private property
 /// until export
-class PubspecInfo {
+class PubspecInfo with Clonable {
   void _publishPackageFieldValidator(String? newVal, String fieldName) {
     if (publishTo != "none") {
       assert(newVal != null, "$fieldName is required when publishing package");
@@ -285,6 +294,26 @@ class PubspecInfo {
     this.issueTracker = issueTracker;
     this.documentation = documentation;
   }
+
+  /// Clone entire [pubspecInfo] data
+  ///
+  /// Ensure all [PubspecInfo] field is valid, otherwise throw [AssertionError]
+  /// if found at least one invalid field on [clone].
+  @override
+  PubspecInfo get clone => PubspecInfo(
+      name: _name,
+      environment: environment.clone,
+      publishTo: publishTo,
+      version: _version,
+      description: _description,
+      homepage: _homepage,
+      repository: _repository,
+      issueTracker: _issueTracker,
+      documentation: _documentation,
+      dependencies: dependencies.clone,
+      devDependencies: devDependencies.clone,
+      dependencyOverrides: dependencyOverrides.clone,
+      additionalProperties: additionalProperties.clone);
 }
 
 /// Condition of checking is a flutter project

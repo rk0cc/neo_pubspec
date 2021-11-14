@@ -1,3 +1,9 @@
+## 1.1.0
+
+* Allowing clone object for saving data purpose
+* Detailed `README.md` information
+* `validator` comes as individual library
+
 ## 1.0.3+1
 
 * Fix issue when throwing error of no description and version on private package
