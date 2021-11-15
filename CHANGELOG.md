@@ -1,3 +1,7 @@
+## 1.1.1
+
+* Cloning package dependencies with parsing `Set.from`
+
 ## 1.1.0
 
 * Allowing clone object for saving data purpose
