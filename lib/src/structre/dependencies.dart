@@ -188,7 +188,7 @@ class PackageDependencySet extends PackageDependencySetFactory {
 
   @override
   PackageDependencySet get clone =>
-      PackageDependencySet(import: this._dependencies);
+      PackageDependencySet(import: Set.from(_dependencies));
 }
 
 /// An extended class from [PackageDependencySetFactory], but forcing
@@ -248,7 +248,7 @@ class OverridePackageDependencySet extends PackageDependencySetFactory {
 
   @override
   OverridePackageDependencySet get clone =>
-      OverridePackageDependencySet(import: this._dependencies);
+      OverridePackageDependencySet(import: Set.from(_dependencies));
 }
 
 /// Standarise class for defining package depencies
