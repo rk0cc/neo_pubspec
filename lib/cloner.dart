@@ -1,12 +1,11 @@
-/// New generation of `pubspec.yaml` reader and writer
-///
-/// It allows modify pubspec and executing command on located directory.
-library neo_pubspec;
+/// Adding deep clone ability to [PubspecInfo], [PackageDependency] and
+/// [PackageDependencySetFactory]
+library neo_pubspec.cloner;
 
-export 'src/file.dart' hide ExecuteCmd;
+import 'package:neo_pubspec/neo_pubspec.dart';
+
 export 'src/structre/structre.dart'
-    hide
-        FlutterPubspecCondition,
+    show
         GitPackageDependencyCloner,
         PubspecInfoCloner,
         PackageDependencySetCloner,

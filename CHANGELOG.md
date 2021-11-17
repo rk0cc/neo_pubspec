@@ -1,3 +1,7 @@
+## 1.2.0
+
+* Provide delicated library for deep cloning
+
 ## 1.1.1
 
 * Cloning package dependencies with parsing `Set.from`

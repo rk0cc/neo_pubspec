@@ -4,7 +4,7 @@ part of 'structre.dart';
 ///
 /// It can be import or export [Map] data
 abstract class PackageDependencySetFactory extends SetBase<PackageDependency>
-    with Clonable {
+    with _Clonable {
   /// Return [bool] of handling [dependency] with providing [e]
   static bool _iterableCondition(PackageDependency dependency, e) {
     if (e is String) {
@@ -14,6 +14,9 @@ abstract class PackageDependencySetFactory extends SetBase<PackageDependency>
     }
     return false;
   }
+
+  @override
+  PackageDependencySetFactory get _clone;
 
   /// Set of dependency
   final LinkedHashSet<PackageDependency> _dependencies =
@@ -27,10 +30,6 @@ abstract class PackageDependencySetFactory extends SetBase<PackageDependency>
       _dependencies.addAll(import);
     }
   }
-
-  /// Reconstruct [PackageDependencySetFactory]'s data that any modified
-  /// [PackageDependency] will not affected between [clone]
-  PackageDependencySetFactory get clone;
 
   /// Import pubspec data from [map]
   ///
@@ -187,8 +186,13 @@ class PackageDependencySet extends PackageDependencySetFactory {
   PackageDependencySet({Iterable<PackageDependency>? import}) : super(import);
 
   @override
-  PackageDependencySet get clone =>
-      PackageDependencySet(import: Set.from(_dependencies));
+  PackageDependencySet get _clone => PackageDependencySet(
+      import: Set.from(_dependencies.map((e) => e._clone)));
+}
+
+/// Clone handler for [PackageDependencySet]
+extension PackageDependencySetCloner on PackageDependencySet {
+  PackageDependencySet get clone => _clone;
 }
 
 /// An extended class from [PackageDependencySetFactory], but forcing
@@ -247,15 +251,20 @@ class OverridePackageDependencySet extends PackageDependencySetFactory {
   }
 
   @override
-  OverridePackageDependencySet get clone =>
-      OverridePackageDependencySet(import: Set.from(_dependencies));
+  OverridePackageDependencySet get _clone => OverridePackageDependencySet(
+      import: Set.from(_dependencies.map((e) => e._clone)));
+}
+
+/// An implemented class of [OverridePackageDependencySet]
+extension OverridePackageDependencySetCloner on OverridePackageDependencySet {
+  OverridePackageDependencySet get clone => _clone;
 }
 
 /// Standarise class for defining package depencies
 ///
 /// It contains package name and other data realted to this [PackageDependency]
 /// according import method
-abstract class PackageDependency<V> {
+abstract class PackageDependency<V> with _Clonable {
   /// Package's name, which is key field in `pubspec.yaml`
   final String name;
 
@@ -274,6 +283,10 @@ abstract class PackageDependency<V> {
   /// To [compare] is the same package name with this object
   bool operator ==(Object? compare) =>
       (compare is PackageDependency) && compare.hashCode == hashCode;
+
+  @override
+  // ignore: unused_element
+  PackageDependency<V> get _clone;
 }
 
 /// A mixin with providing version data
@@ -306,6 +319,16 @@ class HostedPackageDependency extends PackageDependency<String?>
 
   @override
   String? get pubspecValue => version;
+
+  /// Return deep cloned [HostedPackageDependency]
+  HostedPackageDependency get _clone =>
+      HostedPackageDependency(name: name, version: version);
+}
+
+/// To deep clone [HostedPackageDependency] data
+extension HostedPackageDependencyCloner on HostedPackageDependency {
+  /// Get deep [clone] data of [HostedPackageDependency]
+  HostedPackageDependency get clone => _clone;
 }
 
 /// A package dependency which get from third party package hosting site
@@ -358,6 +381,20 @@ class ThirdPartyHostedPackageDependency
         "hosted": {"name": hostedPackageName, "url": hostedUrl},
         "version": version
       };
+
+  ThirdPartyHostedPackageDependency get _clone =>
+      ThirdPartyHostedPackageDependency(
+          name: name,
+          version: version,
+          hostedPackageName: hostedPackageName,
+          hostedUrl: hostedUrl);
+}
+
+/// To deep clone [ThirdPartyHostedPackageDependency] data
+extension ThirdPartyHostedPackageDependencyCloner
+    on ThirdPartyHostedPackageDependency {
+  /// Get deep [clone] data of [ThirdPartyHostedPackageDependency]
+  ThirdPartyHostedPackageDependency get clone => _clone;
 }
 
 /// A package can be found in local computer
@@ -371,6 +408,15 @@ class LocalPackageDependency extends PackageDependency<Map<String, String>> {
 
   @override
   Map<String, String> get pubspecValue => {"path": packagePath};
+
+  LocalPackageDependency get _clone =>
+      LocalPackageDependency(name: name, packagePath: packagePath);
+}
+
+/// To deep clone [LocalPackageDependency] data
+extension LocalPackageDependencyCloner on LocalPackageDependency {
+  /// Get deep [clone] data of [LocalPackageDependency]
+  LocalPackageDependency get clone => _clone;
 }
 
 /// A package from Git
@@ -422,6 +468,15 @@ class GitPackageDependency extends PackageDependency<Map<String, dynamic>> {
     }
     return map;
   }
+
+  GitPackageDependency get _clone => GitPackageDependency(
+      name: name, gitUrl: gitUrl, gitPath: gitPath, gitRef: gitRef);
+}
+
+/// To deep clone [GitPackageDependency] data
+extension GitPackageDependencyCloner on GitPackageDependency {
+  /// Get deep [clone] data of [GitPackageDependency]
+  GitPackageDependency get clone => _clone;
 }
 
 /// A package that come with SDK
@@ -480,4 +535,16 @@ class SDKPackageDependency extends PackageDependency<Map<String, dynamic>>
     }
     return map;
   }
+
+  SDKPackageDependency get _clone => SDKPackageDependency(
+      name: name,
+      sdk: sdk,
+      version: version,
+      disallowModifySDK: _lockModifySDK);
+}
+
+/// To deep clone [SDKPackageDependency] data
+extension SDKPackageDependencyCloner on SDKPackageDependency {
+  /// Get deep [clone] data of [SDKPackageDependency]
+  SDKPackageDependency get clone => _clone;
 }

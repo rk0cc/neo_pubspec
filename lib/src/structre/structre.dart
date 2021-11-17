@@ -1,13 +1,26 @@
 import 'dart:collection';
 
-import 'package:neo_pubspec/neo_pubspec.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
-import '../clonable.dart';
 import '../validator.dart' as validator;
 
 part 'dependencies.dart';
+
+/// Indicate this [Object] can be cloned with same value but different memory
+/// location object
+///
+/// Please keep this mixin not public
+mixin _Clonable {
+  /// Generate new [Object] with delicated memory location
+  ///
+  /// This allows to perform
+  /// [Memento Pattern](https://en.wikipedia.org/wiki/Memento_pattern) that the
+  /// variable will not shared the same location which allowing save difference
+  /// when doing changed.
+  // ignore: unused_element
+  Object get _clone;
+}
 
 FormatException _genExceptionFromAssertError(AssertionError ae) {
   if (ae.message != null) {
@@ -26,7 +39,7 @@ void _assignHandler(void Function() assign) {
 }
 
 /// Environment configuration field from `pubspec.yaml`
-class PubspecEnvironment with Clonable {
+class PubspecEnvironment with _Clonable {
   late String _sdk;
   late String? _flutter;
 
@@ -72,14 +85,14 @@ class PubspecEnvironment with Clonable {
   }
 
   @override
-  PubspecEnvironment get clone =>
+  PubspecEnvironment get _clone =>
       PubspecEnvironment(sdk: this._sdk, flutter: this._flutter);
 }
 
 /// A [Map] data that is not defined in [PubspecInfo]
 ///
 /// It may be `executables` or `flutter` that on-demand field
-class AdditionalProperty extends MapBase<String, dynamic> with Clonable {
+class AdditionalProperty extends MapBase<String, dynamic> with _Clonable {
   final Map<String, dynamic> _map = {};
 
   /// The [Set] that you can not assign in [AdditionalProperty] since they
@@ -132,7 +145,7 @@ class AdditionalProperty extends MapBase<String, dynamic> with Clonable {
   remove(Object? key) => _map.remove(key);
 
   @override
-  AdditionalProperty get clone => AdditionalProperty(data: this._map);
+  AdditionalProperty get _clone => AdditionalProperty(data: _map);
 }
 
 /// Object of `pubspec.yaml` context
@@ -140,7 +153,7 @@ class AdditionalProperty extends MapBase<String, dynamic> with Clonable {
 /// Only shared field will be included this object, any unique field
 /// like `flutter` or `executables` will be stored as private property
 /// until export
-class PubspecInfo with Clonable {
+class PubspecInfo with _Clonable {
   void _publishPackageFieldValidator(String? newVal, String fieldName) {
     if (publishTo != "none") {
       assert(newVal != null, "$fieldName is required when publishing package");
@@ -300,9 +313,9 @@ class PubspecInfo with Clonable {
   /// Ensure all [PubspecInfo] field is valid, otherwise throw [AssertionError]
   /// if found at least one invalid field on [clone].
   @override
-  PubspecInfo get clone => PubspecInfo(
+  PubspecInfo get _clone => PubspecInfo(
       name: _name,
-      environment: environment.clone,
+      environment: environment._clone,
       publishTo: publishTo,
       version: _version,
       description: _description,
@@ -310,10 +323,10 @@ class PubspecInfo with Clonable {
       repository: _repository,
       issueTracker: _issueTracker,
       documentation: _documentation,
-      dependencies: dependencies.clone,
-      devDependencies: devDependencies.clone,
-      dependencyOverrides: dependencyOverrides.clone,
-      additionalProperties: additionalProperties.clone);
+      dependencies: dependencies._clone,
+      devDependencies: devDependencies._clone,
+      dependencyOverrides: dependencyOverrides._clone,
+      additionalProperties: additionalProperties._clone);
 }
 
 /// Condition of checking is a flutter project
@@ -322,4 +335,10 @@ extension FlutterPubspecCondition on PubspecInfo {
   /// [PubspecInfo]
   bool get isFlutter =>
       dependencies.contains(SDKPackageDependency.flutter(name: "flutter"));
+}
+
+/// Cloning entire [PubspecInfo]
+extension PubspecInfoCloner on PubspecInfo {
+  /// Generate deep cloned [PubspecInfo]
+  PubspecInfo get clone => _clone;
 }
